@@ -31,8 +31,17 @@ void* readfromfile(char name[], pole_t* base, int* sizemas) {
 }
 pole_t* baseinitialize(char name[], pole_t* base, int* sizemas) {
 	FILE* fdb;
+	int newsize=0;
 	fdb = fopen(name, "r");
-	for (int i = 0; i < *sizemas; i++) {
+	while (!feof(fdb))
+	{
+		if (fgetc(fdb) == '\n')
+			newsize++;
+	}
+	newsize = newsize / 6;
+	fclose(fdb);
+	fdb = fopen(name, "r");
+	for (int i = 0; i < newsize; i++) {
 		fscanf(fdb, "%s", &base[i].name);
 		fscanf(fdb, "%f", &base[i].mow);
 		fscanf(fdb, "%lf", &base[i].koef);
@@ -40,6 +49,7 @@ pole_t* baseinitialize(char name[], pole_t* base, int* sizemas) {
 		fscanf(fdb, "%f", &base[i].height);
 	}
 	fclose(fdb);
+	*sizemas = newsize;
 return base;
 }
 pole_t* newzap(int* sizemas, pole_t* base, char name[]) {
@@ -81,7 +91,7 @@ pole_t* newzap(int* sizemas, pole_t* base, char name[]) {
 	*sizemas = newsize;
 	return base;
 }
-int compare(void const* ax, void const* bx) {
+int compare(pole_t const* ax, pole_t const* bx) {
 	const struct db* a = ax, * b = bx;
 	float Q1, Q2, mow1, mow2, height1, height2;
 	Q1 = a->mow + 0.5 * a->height;
@@ -91,15 +101,16 @@ int compare(void const* ax, void const* bx) {
 	if (Q1 == Q1) return 0;
 }
 void printbase(pole_t* base, int* size) {
+	printf("Вывод значений базы данных отсортированных по Q\nQ=Мощность+0.5*Высоту\n\n");
 	for (int i = 0; i < *size; i++) {
 		printf("%s %.2f %.2lf %s %.2f\n", base[i].name, base[i].mow, base[i].koef, base[i].forma, base[i].height);
 	}
 }
-void namefinder(pole_t* base, int* size, char namesearcher[]) {
+int namefinder(pole_t* base, int* size, char namesearcher[]) {
 	printf("По имени %s найденны следующие записи\n", namesearcher);
 	for (int i = 0; i < *size; i++) {
 		if (strcmp(base[i].name, namesearcher) == 0) {
-			printf("%s %.2f %.2lf %s %.2f\n", base[i].name, base[i].mow, base[i].koef, base[i].forma, base[i].height);
+			return i;
 		}
 	}
 }
@@ -110,26 +121,17 @@ void heightrangesearch(pole_t* base, int* size, float toph, float baseh) {
 		if (base[i].height > baseh && base[i].height < toph) {
 			printf("%s %.2f %.2lf %s %.2f\n", base[i].name, base[i].mow, base[i].koef, base[i].forma, base[i].height);
 		}
+
 	}
 }
-void printmenu() {
-	printf("\n");
-	printf("Выберите пункт меню введя соответсвующую цифру:\n"
-		"1.Создание новой записи в базе данных\n"
-		"2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n"
-		"3.Cортировка записей по Q\n"
-		"4.Поиск по имени\n"
-		"5.Поиск в диапазоне высот\n"
-		"6.Выход из"
-		"программы\n");
-}
+
 
 
 
 int main() {
 	setlocale(LC_ALL, 0);
 	system("chcp 1251");
-	int exitstate = 0, switchstate, tempsize = 0, counter;
+	int exitstate = 0, switchstate, tempsize = 0, counter, namei;
 	float baseh, toph;
 	FILE* fdb;
 	//char name[] = "C:\\Users\\iraki\\Documents\\DB2.txt";
@@ -146,6 +148,7 @@ int main() {
 	fclose(fdb);
 	base = (pole_t*)malloc(tempsize * sizeof(pole_t));
 	baseinitialize(name, base, &tempsize);
+	printf("\aПрограмма дляработы с базой данных\"Антенна\"\n");
 	printf("Выберите пункт меню введя соответсвующую цифру:\n"
 		"1.Создание новой записи в базе данных\n"
 		"2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n"
@@ -165,28 +168,30 @@ int main() {
 			printf("%d", tempsize);
 			fclose(fdb);
 			baseinitialize(name, base, &sizemas);
-			printmenu();
+			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 2:
 			system("cls");
 			baseinitialize(name, base, &sizemas);
 			readfromfile(name, base, &tempsize);
-			printmenu();
+			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 3:
 			system("cls");
 			baseinitialize(name, base, &sizemas);
 			qsort(base, tempsize, sizeof(pole_t), compare);
 			printbase(base, &tempsize);
-			printmenu();
+			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 4:
+			
 			system("cls");
 			baseinitialize(name, base, &sizemas);
 			printf("Введите имя, по которому нужно произвести поиск\n");
 			scanf("%s", &namesearcher);
-			namefinder(base, &tempsize, namesearcher);
-			printmenu();
+			namei = namefinder(base, &tempsize, namesearcher);
+			printf("%s %.2f %.2lf %s %.2f\n", base[namei].name, base[namei].mow, base[namei].koef, base[namei].forma, base[namei].height);
+			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 5:
 			system("cls");
@@ -196,12 +201,12 @@ int main() {
 			printf("Введите верхний порог высоты\n");
 			scanf("%f", &toph);
 			heightrangesearch(base, &tempsize, toph, baseh);
-			printmenu();
+			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 6:
 			free(base);
-			exitstate = 1;
-			exit;
+			//exitstate = 1;
+			return 1;
 			break;
 		}
 	}
