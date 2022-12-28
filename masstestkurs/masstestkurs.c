@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include<malloc.h>
 
- int* sizemas = 0;//version 2
+ //version 3
 
 struct db {
 	char name[30];
@@ -52,14 +52,17 @@ pole_t* baseinitialize(char name[], pole_t* base, int* sizemas) {
 	*sizemas = newsize;
 return base;
 }
-pole_t* newzap(int* sizemas, pole_t* base, char name[]) {
+pole_t* newzap(int* sizemas, pole_t* base, char name[], pole_t* newarr) {
 	FILE* fdb;
-	pole_t* newarr;
+	printf("%d\n", sizemas);
 	int newsize;
 	newsize = *sizemas;
 	newarr = base;
 	newsize++;
-	base = (pole_t*)realloc(base, newsize * sizeof(pole_t));
+	printf("%d", newsize);
+	newarr = (pole_t*)malloc(newsize * sizeof(pole_t));
+	 newarr = base;
+	 base = newarr;
 	if (base == NULL) {
 		printf("error");
 		base = newarr;
@@ -89,6 +92,7 @@ pole_t* newzap(int* sizemas, pole_t* base, char name[]) {
 	printf("%f", base[*sizemas].height);
 	fprintf(fdb, "\n");
 	*sizemas = newsize;
+	//free(newarr);
 	return base;
 }
 int compare(pole_t const* ax, pole_t const* bx) {
@@ -106,23 +110,26 @@ void printbase(pole_t* base, int* size) {
 		printf("%s %.2f %.2lf %s %.2f\n", base[i].name, base[i].mow, base[i].koef, base[i].forma, base[i].height);
 	}
 }
-int namefinder(pole_t* base, int* size, char namesearcher[]) {
-	printf("По имени %s найденны следующие записи\n", namesearcher);
+int* namefinder(pole_t* base, int* size, char namesearcher[], int* arrotv) {
+	int n = 0;
 	for (int i = 0; i < *size; i++) {
 		if (strcmp(base[i].name, namesearcher) == 0) {
-			return i;
+			arrotv[n++] = i;
 		}
 	}
+	return arrotv;
 }
 
-void heightrangesearch(pole_t* base, int* size, float toph, float baseh) {
+int* heightrangesearch(pole_t* base, int* size, float toph, float baseh, int* arrotv) {
 	printf("В диапазоне выост от %.2f до %.2f\n", baseh, toph);
+	int n = 0;
 	for (int i = 0; i < *size; i++) {
 		if (base[i].height > baseh && base[i].height < toph) {
-			printf("%s %.2f %.2lf %s %.2f\n", base[i].name, base[i].mow, base[i].koef, base[i].forma, base[i].height);
+			arrotv[n++] = i;
 		}
 
 	}
+	return arrotv;
 }
 
 
@@ -131,14 +138,16 @@ void heightrangesearch(pole_t* base, int* size, float toph, float baseh) {
 int main() {
 	setlocale(LC_ALL, 0);
 	system("chcp 1251");
-	int exitstate = 0, switchstate, tempsize = 0, counter, namei;
-	float baseh, toph;
+	int exitstate = 0, switchstate, tempsize = 0;
+	float baseh=0, toph=0;
+	int* sizemas = (int*) malloc(1000*sizeof(int));
+	sizemas = 0;
 	FILE* fdb;
-	//char name[] = "C:\\Users\\iraki\\Documents\\DB2.txt";
 	char name[] = "DB2.txt";
 	char namesearcher[30];
 	fdb = fopen(name, "r");
 	pole_t* base;
+	pole_t* newarr;
 	while (!feof(fdb))
 	{
 		if (fgetc(fdb) == '\n')
@@ -157,14 +166,16 @@ int main() {
 		"5.Поиск в диапазоне высот\n"
 		"6.Выход из"
 		"программы\n");
-		counter = tempsize;
-	while (exitstate != 1) {
 		sizemas = tempsize;
+	while (exitstate != 1) {
+		int* arrotv = (int*)malloc((tempsize) * sizeof(int));
+		printf("\n%d", sizemas);
+		tempsize = sizemas;
 		scanf("%d", &switchstate);
 		switch (switchstate) {
 		case 1:
 			system("cls");
-			newzap(&tempsize, base, name);
+			newzap(&sizemas, base, name, &newarr);
 			printf("%d", tempsize);
 			fclose(fdb);
 			baseinitialize(name, base, &sizemas);
@@ -189,8 +200,15 @@ int main() {
 			baseinitialize(name, base, &sizemas);
 			printf("Введите имя, по которому нужно произвести поиск\n");
 			scanf("%s", &namesearcher);
-			namei = namefinder(base, &tempsize, namesearcher);
-			printf("%s %.2f %.2lf %s %.2f\n", base[namei].name, base[namei].mow, base[namei].koef, base[namei].forma, base[namei].height);
+			printf("По имени %s найденны следующие записи\n", namesearcher);
+			arrotv = namefinder(base, &sizemas, namesearcher, arrotv);
+			for (int i = 0; i < sizemas; i++) {
+				int foundname = 0;
+				foundname = *arrotv++;
+				if (foundname >= 0 && foundname <= tempsize) {
+					printf("%s %.2f %.2lf %s %.2f\n", base[foundname].name, base[foundname].mow, base[foundname].koef, base[foundname].forma, base[foundname].height);
+				}
+			}
 			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 5:
@@ -200,12 +218,21 @@ int main() {
 			scanf("%f", &baseh);
 			printf("Введите верхний порог высоты\n");
 			scanf("%f", &toph);
-			heightrangesearch(base, &tempsize, toph, baseh);
+			printf("В диапазоне высот от %f до %f найдены следующие записи\n", baseh, toph);
+			arrotv = heightrangesearch(base, &tempsize, toph, baseh, arrotv);
+			for (int i = 0; i < sizemas; i++) {
+				int foundname = 0;
+				foundname = *arrotv++;
+				if (foundname >= 0 && foundname <= tempsize) {
+					printf("%s %.2f %.2lf %s %.2f\n", base[foundname].name, base[foundname].mow, base[foundname].koef, base[foundname].forma, base[foundname].height);
+				}
+			}
 			printf("\nВыберите пункт меню введя соответсвующую цифру:\n1.Создание новой записи в базе данных\n2.Чтение всех записей, НУЖНОДОРАБОТАТЬ!!!!\n3.Cортировка записей по Q\n4.Поиск по имени\n5.Поиск в диапазоне высот\n6.Выход изпрограммы\n");
 			break;
 		case 6:
 			free(base);
-			//exitstate = 1;
+			free(arrotv);
+			exitstate = 1;
 			return 1;
 			break;
 		}
